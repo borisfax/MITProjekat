@@ -42,7 +42,7 @@ class _ShopScreenState extends State<ShopScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFFFFCDD2).withValues(alpha: 0.24),
+      backgroundColor: const Color(0xFFFFCDD2).withValues(alpha: 0.42),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
