@@ -1,0 +1,23 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/.env.local
+
+# Frontend
+frontend/build/
+frontend/.dart_tool/
+frontend/android/
+frontend/ios/
+frontend/.packages
+frontend/pubspec.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
