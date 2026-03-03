@@ -14,7 +14,7 @@ class AuthProvider extends ChangeNotifier {
   // Backend API URL
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:5000/api/auth',
+    defaultValue: 'http://172.16.105.106:5000/api/auth',
   );
 
   User? get currentUser => _currentUser;

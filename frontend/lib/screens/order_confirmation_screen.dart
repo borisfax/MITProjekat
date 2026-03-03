@@ -41,7 +41,7 @@ class OrderConfirmationScreen extends StatelessWidget {
 
                   // Title
                   Text(
-                    'Наруџба потврђена!',
+                    'Наруџбина потврђена!',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -51,7 +51,7 @@ class OrderConfirmationScreen extends StatelessWidget {
 
                   // Message
                   Text(
-                    'Захваљујем вам што сте наручили од нас. Ваша наруџба је примљена.',
+                    'Захваљујем вам што сте наручили од нас. Ваша наруџбина је примљена.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.grey.shade600,
                     ),
@@ -145,7 +145,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                             ),
                             Text(
                               order.paymentMethod == 'cash'
-                                  ? 'Готина'
+                                  ? 'Готовина'
                                   : 'Картица',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.bold,

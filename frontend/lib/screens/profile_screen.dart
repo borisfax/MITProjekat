@@ -5,8 +5,32 @@ import '../providers/order_provider.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user orders when profile is opened
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+
+      if (authProvider.isAuthenticated &&
+          authProvider.currentUser != null &&
+          authProvider.authToken != null) {
+        orderProvider.fetchUserOrders(
+          userId: authProvider.currentUser!.id,
+          authToken: authProvider.authToken!,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +189,38 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Consumer<OrderProvider>(
                   builder: (context, orderProvider, _) {
+                    if (orderProvider.isLoading) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    if (orderProvider.error != null) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade300),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.error_outline,
+                                color: Colors.red.shade700),
+                            const SizedBox(height: 8),
+                            Text(
+                              orderProvider.error ?? 'Грешка при учитавању',
+                              style: TextStyle(color: Colors.red.shade700),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
                     final userOrders = orderProvider.getUserOrders(user.id);
 
                     if (userOrders.isEmpty) {

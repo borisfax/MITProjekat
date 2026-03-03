@@ -69,6 +69,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
 
+    // Check if user is authenticated
+    if (!authProvider.isAuthenticated || authProvider.authToken == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Морате бити пријављени да направите наруџбину'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() => _isLoading = false);
+      return;
+    }
+
     // Create order
     final order = Order(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -90,22 +103,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       paymentMethod: _selectedPaymentMethod,
     );
 
-    // Save order to provider
-    orderProvider.addOrder(order);
-
-    // Clear cart
-    cartProvider.clearCart();
-
-    setState(() => _isLoading = false);
+    // Send order to backend API
+    final success = await orderProvider.createOrder(
+      order: order,
+      authToken: authProvider.authToken!,
+    );
 
     if (!mounted) return;
 
-    // Navigate to confirmation screen
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => OrderConfirmationScreen(order: order),
-      ),
-    );
+    if (success) {
+      // Clear cart
+      cartProvider.clearCart();
+
+      setState(() => _isLoading = false);
+
+      // Navigate to confirmation screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => OrderConfirmationScreen(order: order),
+        ),
+      );
+    } else {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(orderProvider.error ?? 'Грешка при креирању наруџбине'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
