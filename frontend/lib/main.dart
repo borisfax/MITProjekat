@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:candy_shop/theme/app_theme.dart';
 import 'package:candy_shop/screens/shop_shell.dart';
+import 'package:candy_shop/screens/login_screen.dart';
 import 'package:candy_shop/providers/cart_provider.dart';
 import 'package:candy_shop/providers/auth_provider.dart';
 
@@ -22,7 +23,18 @@ class CandyShopApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Candy Shop',
         theme: AppTheme.lightTheme,
-        home: const ShopShell(),
+        home: Consumer<AuthProvider>(
+          builder: (context, authProvider, _) {
+            if (authProvider.isLoading) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            return (authProvider.isAuthenticated || authProvider.isGuest) ? const ShopShell() : const LoginScreen();
+          },
+        ),
         debugShowCheckedModeBanner: false,
       ),
     );

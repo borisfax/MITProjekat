@@ -6,12 +6,14 @@ import '../models/user.dart';
 class AuthProvider extends ChangeNotifier {
   User? _currentUser;
   bool _isLoading = false;
+  bool _isGuest = false;
 
   // Mock user database (u produkciji bi ovo bilo iz backend API-ja)
   final List<Map<String, String>> _mockUsers = [];
 
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  bool get isGuest => _isGuest;
   bool get isLoading => _isLoading;
   bool get isAdmin => _currentUser?.role == 'admin';
 
@@ -164,6 +166,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Login as guest
+  void loginAsGuest() {
+    _isGuest = true;
+    _currentUser = null;
+    notifyListeners();
+  }
+
   // Logout user
   Future<void> logout() async {
     _isLoading = true;
@@ -172,6 +181,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       await _clearUserFromPreferences();
       _currentUser = null;
+      _isGuest = false;
     } catch (e) {
       debugPrint('Error during logout: $e');
     } finally {

@@ -51,8 +51,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pop(); // Go back to login screen
-      Navigator.of(context).pop(); // Go back to previous screen
+      // Pop back to login screen, Consumer in main.dart will handle showing ShopShell
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Налог је успешно креиран!'),

@@ -185,6 +185,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 24),
+                // Continue as guest button
+                OutlinedButton.icon(
+                  onPressed: () {
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    authProvider.loginAsGuest();
+                  },
+                  icon: const Icon(Icons.shopping_bag_outlined),
+                  label: const Text('Настави као гост'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
               ],
             ),
           ),
