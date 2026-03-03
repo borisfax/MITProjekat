@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
+import '../providers/cart_provider.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
@@ -33,10 +35,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _addToCart() {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    cartProvider.addItem(widget.product, _quantity);
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.product.name} ($_quantity kom) dodato u korpu'),
+        content: Text('${widget.product.name} ($_quantity kom) додато у корпу'),
         duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
