@@ -123,8 +123,8 @@ final List<Product> mockProducts = [
   ),
   const Product(
     id: '18',
-    name: 'Bombone voćni zalogaji',
-    description: 'Mekane bombone voćnog ukusa, odličan slatki izbor za svaku priliku.',
+    name: 'Čokoladne pločice sa voćem',
+    description: 'Fina mliječna čokolada sa zasušenim voćnim komadićima.',
     priceRSD: 305.0,
     imageUrl: 'assets/images/product_18.jpg',
     rating: 4.7,

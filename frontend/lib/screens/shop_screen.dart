@@ -42,8 +42,21 @@ class _ShopScreenState extends State<ShopScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFFFFCDD2).withValues(alpha: 0.42),
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFFFFD6E0).withValues(alpha: 0.8), // soft rose
+              const Color(0xFFFFE4E9).withValues(alpha: 0.7), // light pink
+              const Color(0xFFFFF0F3).withValues(alpha: 0.6), // pale pink
+              const Color(0xFFFFFAFB).withValues(alpha: 0.5), // barely pink
+            ],
+            stops: const [0.0, 0.35, 0.65, 1.0],
+          ),
+        ),
+        child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -76,15 +89,15 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(width: 30),
+                    const SizedBox(width: 50),
                     Transform.rotate(
-                      angle: 0.3,
+                      angle: 0.6,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         child: Image.asset(
                           'assets/images/logo.png',
-                          width: 54,
-                          height: 54,
+                          width: 64,
+                          height: 64,
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -204,6 +217,7 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

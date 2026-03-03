@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/order_provider.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
@@ -38,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     authProvider.isGuest 
-                      ? 'Пријавите се да сачувате наручбине'
+                      ? 'Пријавите се да сачувате наруџбине'
                       : 'Пријавите се да видите ваш профил',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -116,7 +117,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        user.role == 'admin' ? '👨‍💼 Администратор' : '👤 Коисник',
+                        user.role == 'admin' ? '👨‍💼 Администратор' : '👤 Корисник',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
@@ -156,38 +157,144 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 // Orders Section
                 Text(
-                  'Моје наручбине',
+                  'Моје наруџбине',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 48,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                Consumer<OrderProvider>(
+                  builder: (context, orderProvider, _) {
+                    final userOrders = orderProvider.getUserOrders(user.id);
+
+                    if (userOrders.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: theme.colorScheme.outline
+                                .withValues(alpha: 0.3),
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Немате наручбина',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
+                                size: 48,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.3),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Немате наруџби',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: userOrders.length,
+                      itemBuilder: (context, index) {
+                        final order = userOrders[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: theme.colorScheme.outline
+                                  .withValues(alpha: 0.3),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Редни број: ${order.id}',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${order.items.length} артикала',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '${order.totalPrice.toStringAsFixed(0)} дин',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.primaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: order.status == 'pending'
+                                              ? Colors.orange.shade100
+                                              : Colors.green.shade100,
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          order.status == 'pending'
+                                              ? 'На чекању'
+                                              : 'Потврђено',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: order.status == 'pending'
+                                                ? Colors.orange.shade700
+                                                : Colors.green.shade700,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
                 // Logout Button
@@ -202,19 +309,6 @@ class ProfileScreen extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Обриши налог'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.grey,
                       foregroundColor: Colors.white,
                     ),
                   ),

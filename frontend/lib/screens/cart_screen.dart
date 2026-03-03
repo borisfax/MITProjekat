@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
 import 'login_screen.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -246,7 +247,11 @@ class CartScreen extends StatelessWidget {
                     if (authProvider.isAuthenticated)
                       FilledButton.icon(
                         onPressed: () {
-                          _showCheckoutDialog(context);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const CheckoutScreen(),
+                            ),
+                          );
                         },
                         icon: const Icon(Icons.shopping_bag),
                         label: const Text('Наручи'),
@@ -325,22 +330,6 @@ class CartScreen extends StatelessWidget {
               );
             },
             child: const Text('Испразни'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCheckoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Наручивање'),
-        content: const Text('Функционалност наручивања ће бити додата у следећој верзији.'),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('У реду'),
           ),
         ],
       ),
