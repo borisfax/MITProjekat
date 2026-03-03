@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../screens/shop_shell.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -51,8 +52,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Pop back to login screen, Consumer in main.dart will handle showing ShopShell
-      Navigator.of(context).pop();
+      // Ide direktno na ShopShell nakon uspešne registracije
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const ShopShell(),
+        ),
+      );
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Налог је успешно креиран!'),
@@ -61,8 +67,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Корисник са тим емаилом већ постоји'),
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Корисник са тим емаилом већ постоји'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

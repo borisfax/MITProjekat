@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
+import 'shop_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -40,7 +41,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pop(); // Go back to previous screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const ShopShell(),
+        ),
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Успешно сте се улоговали!'),
@@ -49,8 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Неисправан емаил или лозинка'),
+        SnackBar(
+          content: Text(authProvider.errorMessage ?? 'Неисправан емаил или лозинка'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

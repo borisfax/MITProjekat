@@ -1,27 +1,35 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../models/user.dart';
 
 class AuthProvider extends ChangeNotifier {
   User? _currentUser;
+  String? _authToken;
   bool _isLoading = false;
   bool _isGuest = false;
+  String? _errorMessage;
 
-  // Mock user database (u produkciji bi ovo bilo iz backend API-ja)
-  final List<Map<String, String>> _mockUsers = [];
+  // Backend API URL
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:5000/api/auth',
+  );
 
   User? get currentUser => _currentUser;
-  bool get isAuthenticated => _currentUser != null;
+  String? get authToken => _authToken;
+  bool get isAuthenticated => _currentUser != null && _authToken != null;
   bool get isGuest => _isGuest;
   bool get isLoading => _isLoading;
   bool get isAdmin => _currentUser?.role == 'admin';
+  String? get errorMessage => _errorMessage;
 
   AuthProvider() {
     _loadUserFromPreferences();
   }
 
-  // Load user from SharedPreferences on app start
+  // Load user and token from SharedPreferences on app start
   Future<void> _loadUserFromPreferences() async {
     _isLoading = true;
     notifyListeners();
@@ -29,10 +37,12 @@ class AuthProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userJson = prefs.getString('currentUser');
+      final token = prefs.getString('authToken');
       
-      if (userJson != null) {
+      if (userJson != null && token != null) {
         final userMap = jsonDecode(userJson) as Map<String, dynamic>;
         _currentUser = User.fromJson(userMap);
+        _authToken = token;
       }
     } catch (e) {
       debugPrint('Error loading user: $e');
@@ -42,22 +52,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Save user to SharedPreferences
-  Future<void> _saveUserToPreferences(User user) async {
+  // Save user and token to SharedPreferences
+  Future<void> _saveUserToPreferences(User user, String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userJson = jsonEncode(user.toJson());
       await prefs.setString('currentUser', userJson);
+      await prefs.setString('authToken', token);
     } catch (e) {
       debugPrint('Error saving user: $e');
     }
   }
 
-  // Clear user from SharedPreferences
+  // Clear user and token from SharedPreferences
   Future<void> _clearUserFromPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('currentUser');
+      await prefs.remove('authToken');
     } catch (e) {
       debugPrint('Error clearing user: $e');
     }
@@ -72,50 +84,57 @@ class AuthProvider extends ChangeNotifier {
     String? address,
   }) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      // Check if user already exists
-      final existingUser = _mockUsers.firstWhere(
-        (user) => user['email'] == email,
-        orElse: () => {},
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'phone': phone ?? '',
+          'address': address ?? '',
+        }),
       );
 
-      if (existingUser.isNotEmpty) {
-        _isLoading = false;
-        notifyListeners();
-        return false; // User already exists
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        
+        if (responseData['success']) {
+          final userData = responseData['data']['user'];
+          final token = responseData['data']['token'];
+
+          // Auto-login after registration
+          _currentUser = User(
+            id: userData['id'],
+            name: userData['name'],
+            email: userData['email'],
+            role: userData['role'] ?? 'user',
+            phone: userData['phone']?.isEmpty ?? true ? null : userData['phone'],
+            address: userData['address']?.isEmpty ?? true ? null : userData['address'],
+          );
+
+          _authToken = token;
+          await _saveUserToPreferences(_currentUser!, token);
+
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        _errorMessage = errorData['message'] ?? 'Greška pri registraciji';
       }
-
-      // Create new user
-      final userId = DateTime.now().millisecondsSinceEpoch.toString();
-      _mockUsers.add({
-        'id': userId,
-        'name': name,
-        'email': email,
-        'password': password,
-        'role': 'user',
-        'phone': phone ?? '',
-        'address': address ?? '',
-      });
-
-      // Auto-login after registration
-      _currentUser = User(
-        id: userId,
-        name: name,
-        email: email,
-        role: 'user',
-        phone: phone,
-        address: address,
-      );
-
-      await _saveUserToPreferences(_currentUser!);
 
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
     } catch (e) {
       debugPrint('Error during registration: $e');
+      _errorMessage = 'Greška pri povezivanju sa serverom: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -128,38 +147,53 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      // Find user in mock database
-      final user = _mockUsers.firstWhere(
-        (user) => user['email'] == email && user['password'] == password,
-        orElse: () => {},
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
       );
 
-      if (user.isEmpty) {
-        _isLoading = false;
-        notifyListeners();
-        return false; // Invalid credentials
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        if (responseData['success']) {
+          final userData = responseData['data']['user'];
+          final token = responseData['data']['token'];
+
+          _currentUser = User(
+            id: userData['id'],
+            name: userData['name'],
+            email: userData['email'],
+            role: userData['role'] ?? 'user',
+            phone: userData['phone']?.isEmpty ?? true ? null : userData['phone'],
+            address: userData['address']?.isEmpty ?? true ? null : userData['address'],
+          );
+
+          _authToken = token;
+          await _saveUserToPreferences(_currentUser!, token);
+
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        _errorMessage = errorData['message'] ?? 'Pogrešan email ili lozinka';
       }
-
-      // Login successful
-      _currentUser = User(
-        id: user['id']!,
-        name: user['name']!,
-        email: user['email']!,
-        role: user['role']!,
-        phone: user['phone']!.isEmpty ? null : user['phone'],
-        address: user['address']!.isEmpty ? null : user['address'],
-      );
-
-      await _saveUserToPreferences(_currentUser!);
 
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
     } catch (e) {
       debugPrint('Error during login: $e');
+      _errorMessage = 'Greška pri povezivanju sa serverom: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -170,6 +204,7 @@ class AuthProvider extends ChangeNotifier {
   void loginAsGuest() {
     _isGuest = true;
     _currentUser = null;
+    _authToken = null;
     notifyListeners();
   }
 
@@ -181,6 +216,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       await _clearUserFromPreferences();
       _currentUser = null;
+      _authToken = null;
       _isGuest = false;
     } catch (e) {
       debugPrint('Error during logout: $e');
@@ -199,6 +235,7 @@ class AuthProvider extends ChangeNotifier {
     if (_currentUser == null) return false;
 
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -208,30 +245,14 @@ class AuthProvider extends ChangeNotifier {
         address: address,
       );
 
-      // Update in mock database
-      final userIndex = _mockUsers.indexWhere(
-        (user) => user['id'] == _currentUser!.id,
-      );
-      
-      if (userIndex >= 0) {
-        _mockUsers[userIndex] = {
-          'id': _currentUser!.id,
-          'name': _currentUser!.name,
-          'email': _currentUser!.email,
-          'password': _mockUsers[userIndex]['password']!,
-          'role': _currentUser!.role,
-          'phone': _currentUser!.phone ?? '',
-          'address': _currentUser!.address ?? '',
-        };
-      }
-
-      await _saveUserToPreferences(_currentUser!);
+      await _saveUserToPreferences(_currentUser!, _authToken!);
 
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
       debugPrint('Error updating profile: $e');
+      _errorMessage = 'Greška pri ažuriranju profila';
       _isLoading = false;
       notifyListeners();
       return false;
