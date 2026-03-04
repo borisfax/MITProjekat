@@ -8,7 +8,7 @@ class OrderProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   final String _apiBaseUrl =
-      String.fromEnvironment('API_BASE_URL', defaultValue: 'http://172.16.105.106:5000/api/orders');
+      String.fromEnvironment('API_BASE_URL', defaultValue: 'http://172.16.106.11:5000/api/orders');
 
   List<Order> get orders => List.unmodifiable(_orders);
   bool get isLoading => _isLoading;

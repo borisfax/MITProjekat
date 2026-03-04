@@ -18,4 +18,31 @@ class Product {
     required this.category,
     required this.inStock,
   });
+
+  // From JSON (from API response)
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      priceRSD: (json['price'] ?? 0).toDouble(),
+      imageUrl: json['imageUrl'] ?? '',
+      rating: 4.5, // Default rating since backend doesn't have it yet
+      category: json['category'] ?? 'Bombone',
+      inStock: json['isAvailable'] ?? true,
+    );
+  }
+
+  // To JSON (for API requests)
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'price': priceRSD,
+      'imageUrl': imageUrl,
+      'category': category,
+      'isAvailable': inStock,
+    };
+  }
 }

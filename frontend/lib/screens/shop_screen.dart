@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
-import '../data/mock_products.dart';
+import '../providers/product_provider.dart';
 import '../widgets/product_card.dart';
 import 'product_details_screen.dart';
+
+const List<String> categories = ['All', 'Bombone', 'Čokolada', 'Mafini'];
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({Key? key}) : super(key: key);
@@ -22,24 +25,29 @@ class _ShopScreenState extends State<ShopScreen> {
     super.dispose();
   }
 
-  List<Product> get _filteredProducts {
-    return mockProducts.where((product) {
-      // Filter po kategoriji
-      final categoryMatch = _selectedCategory == 'All' || 
-          product.category == _selectedCategory;
-      
-      // Filter po search tekstu
-      final searchMatch = _searchQuery.isEmpty ||
-          product.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          product.description.toLowerCase().contains(_searchQuery.toLowerCase());
-      
-      return categoryMatch && searchMatch;
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final productProvider = Provider.of<ProductProvider>(context);
+    
+    // Filter products based on category and search
+    List<Product> filteredProducts = productProvider.products;
+    
+    // Filter by category
+    if (_selectedCategory != 'All') {
+      filteredProducts = filteredProducts
+          .where((product) => product.category == _selectedCategory)
+          .toList();
+    }
+    
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      final lowerQuery = _searchQuery.toLowerCase();
+      filteredProducts = filteredProducts.where((product) {
+        return product.name.toLowerCase().contains(lowerQuery) ||
+               product.description.toLowerCase().contains(lowerQuery);
+      }).toList();
+    }
     
     return Scaffold(
       body: Container(
@@ -164,56 +172,91 @@ class _ShopScreenState extends State<ShopScreen> {
             const SizedBox(height: 16),
             // Grid sa proizvodima
             Expanded(
-              child: _filteredProducts.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nema proizvoda',
-                            style: theme.textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Pokušajte sa drugom pretragom',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
+              child: productProvider.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
                     )
-                  : GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.68,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: _filteredProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = _filteredProducts[index];
-                        return ProductCard(
-                          product: product,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => ProductDetailsScreen(
-                                  product: product,
+                  : productProvider.error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: theme.colorScheme.error,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Greška pri učitavanju',
+                                style: theme.textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                productProvider.error ?? '',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => productProvider.fetchProducts(),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Pokušaj ponovo'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : filteredProducts.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 64,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Nema proizvoda',
+                                    style: theme.textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Pokušajte sa drugom pretragom',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : GridView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.68,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = filteredProducts[index];
+                                return ProductCard(
+                                  product: product,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductDetailsScreen(
+                                          product: product,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
             ),
           ],
         ),

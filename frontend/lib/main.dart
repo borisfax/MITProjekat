@@ -6,6 +6,7 @@ import 'package:candy_shop/screens/login_screen.dart';
 import 'package:candy_shop/providers/cart_provider.dart';
 import 'package:candy_shop/providers/auth_provider.dart';
 import 'package:candy_shop/providers/order_provider.dart';
+import 'package:candy_shop/providers/product_provider.dart';
 
 void main() {
   runApp(const CandyShopApp());
@@ -21,6 +22,7 @@ class CandyShopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
       ],
       child: MaterialApp(
         title: 'Candy Shop',

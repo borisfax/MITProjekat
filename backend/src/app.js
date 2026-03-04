@@ -4,6 +4,7 @@ const cors = require('cors');
 const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
 const orderRoutes = require('./routes/order.routes');
+const productRoutes = require('./routes/product.routes');
 const errorHandler = require('./middleware/error.middleware');
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/products', productRoutes);
 
 // Global error handler
 app.use(errorHandler);
