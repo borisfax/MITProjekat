@@ -30,10 +30,10 @@ class User {
   // JSON deserialization
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      role: json['role'] as String? ?? 'user',
+      id: (json['_id'] ?? json['id'] ?? '') as String, // MongoDB vraća _id, ali fallback na id
+      name: (json['name'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
+      role: (json['role'] ?? 'user') as String,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
     );

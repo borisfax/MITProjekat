@@ -7,8 +7,8 @@ class ProductProvider extends ChangeNotifier {
   List<Product> _products = [];
   bool _isLoading = false;
   String? _error;
-  final String _apiBaseUrl = 
-      String.fromEnvironment('API_BASE_URL', defaultValue: 'http://172.16.106.11:5000/api/products');
+  final String _apiBaseUrl = String.fromEnvironment('API_BASE_URL',
+      defaultValue: 'http://172.16.106.11:5000/api/products');
 
   List<Product> get products => List.unmodifiable(_products);
   bool get isLoading => _isLoading;
@@ -27,7 +27,7 @@ class ProductProvider extends ChangeNotifier {
 
     try {
       debugPrint('🔵 Fetching products from: $_apiBaseUrl');
-      
+
       final response = await http.get(
         Uri.parse(_apiBaseUrl),
         headers: {
@@ -39,11 +39,12 @@ class ProductProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         if (data['success'] == true && data['data'] != null) {
           final List<dynamic> productsJson = data['data'];
-          _products = productsJson.map((json) => Product.fromJson(json)).toList();
-          
+          _products =
+              productsJson.map((json) => Product.fromJson(json)).toList();
+
           debugPrint('✅ Loaded ${_products.length} products from API');
           _error = null;
         } else {
@@ -83,16 +84,152 @@ class ProductProvider extends ChangeNotifier {
   // Search products
   List<Product> searchProducts(String query) {
     if (query.isEmpty) return _products;
-    
+
     final lowerQuery = query.toLowerCase();
     return _products.where((product) {
       return product.name.toLowerCase().contains(lowerQuery) ||
-             product.description.toLowerCase().contains(lowerQuery);
+          product.description.toLowerCase().contains(lowerQuery);
     }).toList();
   }
 
   // Filter available products
   List<Product> get availableProducts {
     return _products.where((product) => product.inStock).toList();
+  }
+
+  Future<bool> createProduct({
+    required String authToken,
+    required String name,
+    required String description,
+    required double price,
+    required String category,
+    required String imageUrl,
+    int stock = 0,
+    bool isAvailable = true,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await http.post(
+        Uri.parse(_apiBaseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'name': name,
+          'description': description,
+          'price': price,
+          'category': category,
+          'imageUrl': imageUrl,
+          'stock': stock,
+          'isAvailable': isAvailable,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        await fetchProducts();
+        return true;
+      }
+
+      final responseData = jsonDecode(response.body);
+      _error = responseData['message'] ?? 'Greška pri kreiranju proizvoda';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Greška pri povezivanju sa serverom';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateProduct({
+    required String authToken,
+    required String productId,
+    required String name,
+    required String description,
+    required double price,
+    required String category,
+    required String imageUrl,
+    int stock = 0,
+    bool isAvailable = true,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await http.put(
+        Uri.parse('$_apiBaseUrl/$productId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({
+          'name': name,
+          'description': description,
+          'price': price,
+          'category': category,
+          'imageUrl': imageUrl,
+          'stock': stock,
+          'isAvailable': isAvailable,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchProducts();
+        return true;
+      }
+
+      final responseData = jsonDecode(response.body);
+      _error = responseData['message'] ?? 'Greška pri ažuriranju proizvoda';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Greška pri povezivanju sa serverom';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteProduct({
+    required String authToken,
+    required String productId,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$_apiBaseUrl/$productId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        await fetchProducts();
+        return true;
+      }
+
+      final responseData = jsonDecode(response.body);
+      _error = responseData['message'] ?? 'Greška pri brisanju proizvoda';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Greška pri povezivanju sa serverom';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 }

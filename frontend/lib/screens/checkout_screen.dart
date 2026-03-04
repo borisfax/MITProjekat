@@ -300,7 +300,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Radio<String>(
                     value: 'cash',
                     groupValue: _selectedPaymentMethod,
-                    onChanged: (value) => setState(() => _selectedPaymentMethod = value!),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedPaymentMethod = value);
+                      }
+                    },
                   ),
                   const Text('Готина при преузимању'),
                 ],
@@ -313,7 +317,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Radio<String>(
                     value: 'card',
                     groupValue: _selectedPaymentMethod,
-                    onChanged: (value) => setState(() => _selectedPaymentMethod = value!),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedPaymentMethod = value);
+                      }
+                    },
                   ),
                   const Text('Платна картица'),
                 ],

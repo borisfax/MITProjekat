@@ -147,3 +147,117 @@ exports.getOrderById = async (req, res, next) => {
     });
   }
 };
+
+// @desc    Get all orders (ADMIN ONLY)
+// @route   GET /api/orders
+// @access  Private/Admin
+exports.getAllOrders = async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    
+    // Build filter
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    // Get all orders sorted by newest first
+    // Use lean() to avoid populate errors with deleted users
+    const orders = await Order.find(filter)
+      .lean()
+      .sort({ createdAt: -1 });
+
+    // Separately fetch user info for each order
+    const ordersData = [];
+    for (const order of orders) {
+      try {
+        const User = require('../models/User.model');
+        const userData = await User.findById(order.userId).select('name email phone').lean();
+        
+        // Convert MongoDB _id to id and add user info as separate fields
+        const orderObj = {
+          id: order._id.toString(),
+          ...order,
+          userId: userData ? userData._id.toString() : null,
+          userName: userData ? userData.name : null,
+          userEmail: userData ? userData.email : null,
+          userPhone: userData ? userData.phone : null,
+        };
+        delete orderObj._id;
+        
+        ordersData.push(orderObj);
+      } catch (err) {
+        console.warn('⚠️  Could not fetch user for order:', order._id);
+        const orderObj = {
+          id: order._id.toString(),
+          ...order,
+          userId: null,
+          userName: null,
+          userEmail: null,
+          userPhone: null,
+        };
+        delete orderObj._id;
+        ordersData.push(orderObj);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      count: ordersData.length,
+      data: ordersData,
+    });
+  } catch (error) {
+    console.error('Error fetching all orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Грешка при учитавању наруџбина',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update order status (ADMIN ONLY)
+// @route   PUT /api/orders/:id/status
+// @access  Private/Admin
+exports.updateOrderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Статус мора бити један од: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Наруџбина није пронађена',
+      });
+    }
+
+    const orderData = order.toClientJSON();
+
+    res.status(200).json({
+      success: true,
+      message: 'Статус наруџбине је ажуриран',
+      data: orderData,
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Грешка при ажурирању статуса наруџбине',
+      error: error.message,
+    });
+  }
+};

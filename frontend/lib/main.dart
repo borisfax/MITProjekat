@@ -7,6 +7,7 @@ import 'package:candy_shop/providers/cart_provider.dart';
 import 'package:candy_shop/providers/auth_provider.dart';
 import 'package:candy_shop/providers/order_provider.dart';
 import 'package:candy_shop/providers/product_provider.dart';
+import 'package:candy_shop/providers/admin_provider.dart';
 
 void main() {
   runApp(const CandyShopApp());
@@ -23,20 +24,23 @@ class CandyShopApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: MaterialApp(
         title: 'Candy Shop',
         theme: AppTheme.lightTheme,
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {
-            if (authProvider.isLoading) {
+            if (authProvider.isInitializing) {
               return const Scaffold(
                 body: Center(
                   child: CircularProgressIndicator(),
                 ),
               );
             }
-            return (authProvider.isAuthenticated || authProvider.isGuest) ? const ShopShell() : const LoginScreen();
+            return (authProvider.isAuthenticated || authProvider.isGuest)
+                ? const ShopShell()
+                : const LoginScreen();
           },
         ),
         debugShowCheckedModeBanner: false,

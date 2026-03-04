@@ -43,7 +43,10 @@ class OrderItem {
 
 class Order {
   final String id;
-  final String userId;
+  final String? userId;
+  final String? userName;
+  final String? userEmail;
+  final String? userPhone;
   final List<OrderItem> items;
   final double totalPrice;
   final String status; // pending, confirmed, shipped, delivered
@@ -54,7 +57,10 @@ class Order {
 
   Order({
     required this.id,
-    required this.userId,
+    this.userId,
+    this.userName,
+    this.userEmail,
+    this.userPhone,
     required this.items,
     required this.totalPrice,
     required this.status,
@@ -67,6 +73,9 @@ class Order {
   Map<String, dynamic> toJson() => {
     'id': id,
     'userId': userId,
+    'userName': userName,
+    'userEmail': userEmail,
+    'userPhone': userPhone,
     'items': items.map((item) => item.toJson()).toList(),
     'totalPrice': totalPrice,
     'status': status,
@@ -78,7 +87,10 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) => Order(
     id: json['id'] as String,
-    userId: json['userId'] as String,
+    userId: json['userId'] as String?,
+    userName: json['userName'] as String?,
+    userEmail: json['userEmail'] as String?,
+    userPhone: json['userPhone'] as String?,
     items: (json['items'] as List).map((item) => OrderItem.fromJson(item as Map<String, dynamic>)).toList(),
     totalPrice: (json['totalPrice'] as num).toDouble(),
     status: json['status'] as String,

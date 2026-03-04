@@ -8,6 +8,7 @@ class AuthProvider extends ChangeNotifier {
   User? _currentUser;
   String? _authToken;
   bool _isLoading = false;
+  bool _isInitializing = true;
   bool _isGuest = false;
   String? _errorMessage;
 
@@ -22,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _currentUser != null && _authToken != null;
   bool get isGuest => _isGuest;
   bool get isLoading => _isLoading;
+  bool get isInitializing => _isInitializing;
   bool get isAdmin => _currentUser?.role == 'admin';
   String? get errorMessage => _errorMessage;
 
@@ -31,14 +33,14 @@ class AuthProvider extends ChangeNotifier {
 
   // Load user and token from SharedPreferences on app start
   Future<void> _loadUserFromPreferences() async {
-    _isLoading = true;
+    _isInitializing = true;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final userJson = prefs.getString('currentUser');
       final token = prefs.getString('authToken');
-      
+
       if (userJson != null && token != null) {
         final userMap = jsonDecode(userJson) as Map<String, dynamic>;
         _currentUser = User.fromJson(userMap);
@@ -47,7 +49,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error loading user: $e');
     } finally {
-      _isLoading = false;
+      _isInitializing = false;
       notifyListeners();
     }
   }
@@ -88,21 +90,23 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': name,
-          'email': email,
-          'password': password,
-          'phone': phone ?? '',
-          'address': address ?? '',
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$apiBaseUrl/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'name': name,
+              'email': email,
+              'password': password,
+              'phone': phone ?? '',
+              'address': address ?? '',
+            }),
+          )
+          .timeout(const Duration(seconds: 12));
 
       if (response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        
+
         if (responseData['success']) {
           final userData = responseData['data']['user'];
           final token = responseData['data']['token'];
@@ -113,8 +117,11 @@ class AuthProvider extends ChangeNotifier {
             name: userData['name'],
             email: userData['email'],
             role: userData['role'] ?? 'user',
-            phone: userData['phone']?.isEmpty ?? true ? null : userData['phone'],
-            address: userData['address']?.isEmpty ?? true ? null : userData['address'],
+            phone:
+                userData['phone']?.isEmpty ?? true ? null : userData['phone'],
+            address: userData['address']?.isEmpty ?? true
+                ? null
+                : userData['address'],
           );
 
           _authToken = token;
@@ -134,7 +141,10 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       debugPrint('Error during registration: $e');
-      _errorMessage = 'Greška pri povezivanju sa serverom: $e';
+      _errorMessage =
+          e is Exception && e.toString().contains('TimeoutException')
+              ? 'Server ne odgovara. Proverite backend i konekciju.'
+              : 'Greška pri povezivanju sa serverom: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -151,18 +161,20 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$apiBaseUrl/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 12));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        
+
         if (responseData['success']) {
           final userData = responseData['data']['user'];
           final token = responseData['data']['token'];
@@ -172,8 +184,11 @@ class AuthProvider extends ChangeNotifier {
             name: userData['name'],
             email: userData['email'],
             role: userData['role'] ?? 'user',
-            phone: userData['phone']?.isEmpty ?? true ? null : userData['phone'],
-            address: userData['address']?.isEmpty ?? true ? null : userData['address'],
+            phone:
+                userData['phone']?.isEmpty ?? true ? null : userData['phone'],
+            address: userData['address']?.isEmpty ?? true
+                ? null
+                : userData['address'],
           );
 
           _authToken = token;
@@ -193,7 +208,10 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       debugPrint('Error during login: $e');
-      _errorMessage = 'Greška pri povezivanju sa serverom: $e';
+      _errorMessage =
+          e is Exception && e.toString().contains('TimeoutException')
+              ? 'Server ne odgovara. Proverite backend i konekciju.'
+              : 'Greška pri povezivanju sa serverom: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -260,5 +278,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   @override
-  String toString() => 'AuthProvider(user: $_currentUser, authenticated: $isAuthenticated)';
+  String toString() =>
+      'AuthProvider(user: $_currentUser, authenticated: $isAuthenticated)';
 }

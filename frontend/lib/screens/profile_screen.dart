@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/order_provider.dart';
+import 'admin_dashboard_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
@@ -55,16 +56,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    authProvider.isGuest ? 'Прегледате као гост' : 'Нисте пријављени',
+                    authProvider.isGuest
+                        ? 'Прегледате као гост'
+                        : 'Нисте пријављени',
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    authProvider.isGuest 
-                      ? 'Пријавите се да сачувате наруџбине'
-                      : 'Пријавите се да видите ваш профил',
+                    authProvider.isGuest
+                        ? 'Пријавите се да сачувате наруџбине'
+                        : 'Пријавите се да видите ваш профил',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -141,11 +144,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        user.role == 'admin' ? '👨‍💼 Администратор' : '👤 Корисник',
+                        user.role == 'admin'
+                            ? '👨‍💼 Администратор'
+                            : '👤 Корисник',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
+                      if (user.role == 'admin') ...[
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AdminDashboardScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.admin_panel_settings_outlined),
+                          label: const Text('Admin Dashboard'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -304,8 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                   Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
                                         '${order.totalPrice.toStringAsFixed(0)} дин',
